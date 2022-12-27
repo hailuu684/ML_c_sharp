@@ -37,52 +37,60 @@ public class Program
         Console.WriteLine("result ="+ result);*/
         
         string path = "E:/PhD BME admission test/ReviseKnowleged/software_in_c_sharp/Solution1/ConsoleApp1/data.csv";
+        ultis func = new ultis();
         
         // Get data
         GetData data = new GetData();
         List<List<float>> X = new List<List<float>>();
         List<int> y = new List<int>();
         (X, y) = data.GetValues(path);
-
+        
+        // Normalize data with standard deviation and mean
         List<List<float>> X_norm = data.NormalizeData(X);
+        
+        // convert list<list<float>> to float[][]
+        float[][] array = X.Select(x => x.ToArray()).ToArray();
+        
+        // Normalize data using StandardScaler
+        StandardScaler scaler = new StandardScaler(array);
+        float[][] X_scaled = scaler.Transform(array);
+        
+        // Convert data to Array
+        //float[][] X_train = data.ToArrayCustom(X_norm);
+        int[] y_converted = y.ToArray();
+        
+        // split data
+        int start = 0;
+        int end = (int)Math.Round(X_scaled.Length * 0.8);
+        float[][] X_train = func.SliceArray2D(X_scaled, start, end, "one");
+        float[][] X_test = func.SliceArray2D(X_scaled, end, X_scaled.Length, "one");
+        int[] y_train = func.SliceArrayInt(y_converted, start, end);
+        int[] y_test = func.SliceArrayInt(y_converted, end, y_converted.Length);
+        
+        /*// get number of M and B
+        int ones = 0;
+        int zeros = 0;
 
-        float[][] X_train = data.ToArrayCustom(X_norm);
-        int[] y_train = y.ToArray();
-
-        LogisticRegression process = new LogisticRegression();
-        ultis func = new ultis();
-        
-        // Get shape
-        (int m, int n) = data.GetShape(X_train);
-        
-        // Initialize weights
-        var weights = func.GenerateRandomArray(n);
-        
-        // Compute cost
-        var z = process.ComputeCost(X_train, y_train,weights,0);
-        Console.WriteLine(z);
-        
-        //Compute gradient
-        var (gradient_w, gradient_b) = process.CalculateGradient(y_train, X_train, weights, 0);
-        //Console.WriteLine(gradient_b);
-
-        (var w_in, var b_in, var J_his, var w_his) = process.GradientDescent(X_train, y_train, weights, 
-            0.3f, 1000, 0.001f);
-        /*foreach (var values in gradient_w)
+        foreach (int element in y_train)
         {
-            Console.WriteLine(values);
-        }*/
+            if (element == 1)
+            {
+                ones++;
+            }
+            else if (element == 0)
+            {
+                zeros++;
+            }
+        }
 
-        /*float[][] test =
-        {
-            new float[] { 1.0f, 2.0f, 3.0f },
-            new float[] { 4.0f, 5.0f, 6.0f },
-            new float[] { 7.0f, 8.0f, 9.0f },
-            new float[] { 10.0f, 11.0f, 12.0f }
-        };
-        var test_ = func.SliceArray2D(test, 0, 2, dimension: "two");
-        func.Print2DArray(test_);*/
-
+        Console.WriteLine("Number of Malinan: " + ones);
+        Console.WriteLine("Number of zeros: " + zeros);*/
+        //Number of M: 212
+        //Number of B: 357
+        
+        LogisticRegression model = new LogisticRegression(X_train, y_train, 1200);
+        float accuracy = Evaluation.CalculateAccuracy(model, X_test, y_test);
+        
 
     }
 }

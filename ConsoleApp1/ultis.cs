@@ -68,8 +68,11 @@ public class ultis
     {
         return array.Skip(start).Take(end - start).ToArray();
     }
-    
-    
+
+    public int[] SliceArrayInt(int[] array, int start, int end)
+    {
+        return array.Skip(start).Take(end - start).ToArray();
+    }
     /// <summary>
     /// Slice the array of dtype float[][]
     /// use dimension="one" to slice the first dimension
@@ -106,5 +109,41 @@ public class ultis
         
         throw new ArgumentException("Invalid argument dimension");
         //return arrayFail;
+    }
+}
+
+public class StandardScaler
+{
+    private readonly float[] means;
+    private readonly float[] stddevs;
+
+    public StandardScaler(float[][] data)
+    {
+        // Calculate means and standard deviations for each feature
+        int numFeatures = data[0].Length;
+        means = new float[numFeatures];
+        stddevs = new float[numFeatures];
+        for (int i = 0; i < numFeatures; i++)
+        {
+            float[] feature = data.Select(x => x[i]).ToArray();
+            means[i] = feature.Average();
+            stddevs[i] = MathF.Sqrt(feature.Select(x => MathF.Pow(x - means[i], 2)).Sum() / (feature.Length - 1));
+        }
+    }
+
+    public float[][] Transform(float[][] data)
+    {
+        // Standardize the features of the data
+        int numFeatures = data[0].Length;
+        float[][] standardized = new float[data.Length][];
+        for (int i = 0; i < data.Length; i++)
+        {
+            standardized[i] = new float[numFeatures];
+            for (int j = 0; j < numFeatures; j++)
+            {
+                standardized[i][j] = (data[i][j] - means[j]) / stddevs[j];
+            }
+        }
+        return standardized;
     }
 }

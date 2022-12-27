@@ -35,7 +35,11 @@ public class GetData
                 textureMean = parts[3],
                 perimeterMean = parts[4],
                 areaMean = parts[5],
-                smoothness_mean = parts[6]
+                smoothnessMean = parts[6],
+                compactnessMean = parts[7],
+                concavityMean = parts[8],
+                symmetryMean = parts[10],
+                fractalDimensionMean = parts[11]
             };
         
         List<int> y = new List<int>();
@@ -61,10 +65,14 @@ public class GetData
             float areaMean = (float)Convert.ToDouble(value.areaMean);
             float perimeterMean = (float)Convert.ToDouble(value.perimeterMean);
             float radiusMean = (float)Convert.ToDouble(value.radiusMean);
-
+            float compactnessMean = (float)Convert.ToDouble(value.compactnessMean);
+            float concavityMean = (float)Convert.ToDouble(value.concavityMean);
+            float symmetryMean = (float)Convert.ToDouble(value.symmetryMean);
+            
             List<float> features = new List<float>()
             {
-                textureMean, areaMean, perimeterMean, radiusMean
+                textureMean, areaMean, perimeterMean, radiusMean, compactnessMean,
+                concavityMean, symmetryMean
             };
             X.Add(features);
         }
@@ -129,7 +137,7 @@ public class GetData
 }
 
 
-public class LogisticRegression
+public class LogisticRegressionTest
 {
     // define sigmoid function
     private double Sigmoid(float y)
@@ -301,5 +309,83 @@ public class LogisticRegression
         }
 
         return (w_in, b_in, J_history, W_history);
+    }
+}
+
+public class LogisticRegression
+    {
+        private readonly float[] coefficients;
+        private readonly float intercept;
+
+        public LogisticRegression(float[][] X_train, int[] y_train, int numIterations = 1000, float learningRate = 0.01f)
+        {
+            // Initialize coefficients and intercept
+            int numFeatures = X_train[0].Length;
+            coefficients = new float[numFeatures];
+            intercept = 0;
+
+            // Perform gradient descent to optimize coefficients and intercept
+            for (int i = 0; i < numIterations; i++)
+            {
+                float[] gradientCoefficients = new float[numFeatures];
+                float gradientIntercept = 0;
+                List<float> print_error = new List<float>();
+                for (int j = 0; j < X_train.Length; j++)
+                {
+                    float predictedProbability = PredictProbability(X_train[j]);
+                    float error = y_train[j] - predictedProbability;
+                    
+                    // add error to print
+                    print_error.Add(error);
+                    for (int k = 0; k < numFeatures; k++)
+                    {
+                        gradientCoefficients[k] += error * X_train[j][k];
+                    }
+                    gradientIntercept += error;
+                }
+                for (int j = 0; j < numFeatures; j++)
+                {
+                    coefficients[j] += learningRate * gradientCoefficients[j] / X_train.Length;
+                }
+                intercept += learningRate * gradientIntercept / X_train.Length;
+
+                float mean_error = print_error.Average();
+                Console.WriteLine($"Iterations {i}   Loss = {-mean_error}");
+            }
+        }
+
+        public float PredictProbability(float[] x)
+        {
+            // Calculate predicted probability using coefficients and intercept
+            float sum = intercept;
+            for (int i = 0; i < x.Length; i++)
+            {
+                sum += x[i] * coefficients[i];
+            }
+            return (float)(1 / (1 + Math.Exp(-sum)));
+        }
+
+        public int Predict(float[] x)
+        {
+            // Predict class label based on predicted probability
+            return PredictProbability(x) > 0.5 ? 1 : 0;
+        }
+    }
+    
+public static class Evaluation
+{
+    public static float CalculateAccuracy(LogisticRegression model, float[][] X_test, int[] y_test)
+    {
+        // Make predictions for test data and calculate accuracy
+        int numCorrect = 0;
+        for (int i = 0; i < X_test.Length; i++)
+        {
+            if (model.Predict(X_test[i]) == y_test[i])
+            {
+                numCorrect++;
+            }
+        }
+        Console.WriteLine($"Accuracy of model = {(float)numCorrect / X_test.Length}");
+        return (float)numCorrect / X_test.Length;
     }
 }
